@@ -24,7 +24,6 @@ MIT
 * Hỗ trợ các ngôn ngữ: C, C++, Java, Python
 * Cho phép truyền input chuẩn thông qua `stdin`
 * Hỗ trợ CORS
-* Có kiểm tra `recaptchaToken` trong môi trường production
 * Có thể dùng `apiKey` từ request body hoặc biến môi trường server
 
 ---
@@ -68,8 +67,7 @@ Gửi request dạng JSON:
   "language": "cpp",
   "code": "#include <iostream>\nusing namespace std;\nint main() { cout << \"Hello CodePTIT\"; return 0; }",
   "stdin": "",
-  "apiKey": "YOUR_ONLINE_COMPILER_API_KEY" (Optional),
-  "recaptchaToken": "YOUR_RECAPTCHA_TOKEN"
+  "apiKey": "YOUR_ONLINE_COMPILER_API_KEY" (Optional)
 }
 ```
 
@@ -83,7 +81,6 @@ Gửi request dạng JSON:
 | `code`           |     `string` |                                     Có | Mã nguồn cần biên dịch/chạy             |
 | `stdin`          |     `string` |                                  Không | Dữ liệu đầu vào chuẩn cho chương trình  |
 | `apiKey`         |     `string` |                                  Không  | API key dùng để gọi Online Compiler API |
-| `recaptchaToken` |     `string` |                    Có trong production | Token reCAPTCHA từ client               |
 
 ---
 
@@ -119,8 +116,7 @@ curl -X POST "https://your-domain.com/api/send-code" \
     "language": "cpp",
     "code": "#include <iostream>\nusing namespace std;\nint main() { int a, b; cin >> a >> b; cout << a + b; return 0; }",
     "stdin": "2 3",
-    "apiKey": "YOUR_ONLINE_COMPILER_API_KEY",
-    "recaptchaToken": "YOUR_RECAPTCHA_TOKEN"
+    "apiKey": "YOUR_ONLINE_COMPILER_API_KEY"
   }'
 ```
 
@@ -133,8 +129,7 @@ curl -X POST "https://your-domain.com/api/send-code" \
     "language": "python",
     "code": "a, b = map(int, input().split())\nprint(a + b)",
     "stdin": "2 3",
-    "apiKey": "YOUR_ONLINE_COMPILER_API_KEY",
-    "recaptchaToken": "YOUR_RECAPTCHA_TOKEN"
+    "apiKey": "YOUR_ONLINE_COMPILER_API_KEY"
   }'
 ```
 
@@ -163,7 +158,6 @@ int main() {
     `,
     stdin: "2 3",
     apiKey: "YOUR_ONLINE_COMPILER_API_KEY",
-    recaptchaToken: "YOUR_RECAPTCHA_TOKEN",
   }),
 });
 
@@ -200,42 +194,6 @@ Tùy theo Online Compiler API, response thực tế có thể chứa thêm các 
 ---
 
 ## Error Response
-
-### Thiếu `recaptchaToken`
-
-Trong môi trường production, nếu không gửi `recaptchaToken`:
-
-```json
-{
-  "error": "Missing recaptchaToken"
-}
-```
-
-HTTP status:
-
-```txt
-400
-```
-
----
-
-### Server chưa cấu hình `RECAPTCHA_SECRET`
-
-Nếu chạy production nhưng server chưa có biến môi trường `RECAPTCHA_SECRET`:
-
-```json
-{
-  "error": "Internal server error"
-}
-```
-
-HTTP status:
-
-```txt
-500
-```
-
----
 
 ### Thiếu `apiKey`
 
@@ -316,7 +274,6 @@ Tạo file `.env.local` trong project Next.js:
 
 ```env
 API_KEY=YOUR_ONLINE_COMPILER_API_KEY
-RECAPTCHA_SECRET=YOUR_RECAPTCHA_SECRET
 ```
 
 Trong đó:
@@ -324,8 +281,6 @@ Trong đó:
 | Biến môi trường    | Mô tả                                                                 |
 | ------------------ | --------------------------------------------------------------------- |
 | `API_KEY`          | API key dùng để gọi Online Compiler API nếu client không gửi `apiKey` |
-| `RECAPTCHA_SECRET` | Secret key dùng cho reCAPTCHA trong production                        |
-| `NODE_ENV`         | Nếu khác `development`, API sẽ yêu cầu `recaptchaToken`               |
 
 ---
 
@@ -339,8 +294,7 @@ Khuyến nghị sử dụng:
 {
   "language": "cpp",
   "code": "...",
-  "stdin": "...",
-  "recaptchaToken": "..."
+  "stdin": "..."
 }
 ```
 
@@ -357,9 +311,8 @@ Cách này giúp tránh việc lộ API key trong extension hoặc trình duyệ
 ## Luồng xử lý
 
 1. Client gửi request đến `/api/send-code`
-2. Backend kiểm tra `recaptchaToken` trong production
-3. Backend kiểm tra `apiKey`, `language`, `code`
-4. Backend ánh xạ `language` sang compiler tương ứng
+2. Backend kiểm tra `apiKey`, `language`, `code`
+3. Backend ánh xạ `language` sang compiler tương ứng
 5. Backend gửi request đến:
 
 ```txt
@@ -394,7 +347,7 @@ Content-Type: application/json
 ## Ví dụ tích hợp trong CodePTIT Extension
 
 ```js
-async function runCode({ language, code, stdin, recaptchaToken }) {
+async function runCode({ language, code, stdin }) {
   const response = await fetch("https://your-domain.com/api/send-code", {
     method: "POST",
     headers: {
@@ -404,7 +357,6 @@ async function runCode({ language, code, stdin, recaptchaToken }) {
       language,
       code,
       stdin,
-      recaptchaToken,
     }),
   });
 
@@ -475,8 +427,6 @@ Gọi API local:
 http://localhost:3000/api/send-code
 ```
 
-Trong môi trường development, `recaptchaToken` không bắt buộc.
-
 ---
 
 ## Production
@@ -485,16 +435,6 @@ Khi deploy production, cần cấu hình biến môi trường:
 
 ```env
 API_KEY=YOUR_ONLINE_COMPILER_API_KEY
-RECAPTCHA_SECRET=YOUR_RECAPTCHA_SECRET
-NODE_ENV=production
-```
-
-Trong production, client cần gửi thêm:
-
-```json
-{
-  "recaptchaToken": "YOUR_RECAPTCHA_TOKEN"
-}
 ```
 
 ---

@@ -27,25 +27,8 @@ export async function POST(request: Request) {
 
   try {
     const body = await request.json();
-    const { language, code, stdin = "", recaptchaToken } = body;
+    const { language, code, stdin = "" } = body;
     const apiKey = body?.apiKey ?? process.env.API_KEY;
-
-    if (process.env.NODE_ENV !== 'development') {
-      if (!recaptchaToken) {
-        return NextResponse.json(
-          { error: "Missing recaptchaToken" },
-          { status: 400, headers: corsHeaders }
-        );
-      }
-
-      const recaptchaSecret = process.env.RECAPTCHA_SECRET;
-      if (!recaptchaSecret) {
-        return NextResponse.json(
-          { error: "Internal server error" },
-          { status: 500, headers: corsHeaders }
-        );
-      }
-    }
 
     if (!apiKey) {
       return NextResponse.json(
